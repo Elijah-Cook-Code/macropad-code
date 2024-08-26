@@ -11,13 +11,12 @@ import digitalio
 import busio
 import lcd
 import i2c_pcf8574_interface
-import random #for "dnd dice, new mode"
+import random
 
 # Define modes
 MODE_BLENDER = 0
 MODE_KRITA = 1
-MODE_MEDIA = 2
-MODE_DICE = 3
+MODE_DICE = 2
 
 # Initialize current mode
 current_mode = MODE_BLENDER
@@ -25,10 +24,10 @@ current_mode = MODE_BLENDER
 kbd = Keyboard(usb_hid.devices)
 cc = ConsumerControl(usb_hid.devices) 
 
-# create KeyMatrix to read key presses
+# Create KeyMatrix to read key presses
 matrix = keypad.KeyMatrix(
     row_pins=(board.GP10, board.GP11, board.GP12, board.GP13),
-    column_pins=(board.GP4, board.GP5, board.GP6, board.GP7, board.GP8, board.GP9 )
+    column_pins=(board.GP4, board.GP5, board.GP6, board.GP7, board.GP8, board.GP9)
 )
 
 # Set up I2C for LCD
@@ -41,7 +40,6 @@ display = lcd.LCD(i2c, num_rows=2, num_cols=16)
 display.set_backlight(True)
 display.set_display_enabled(True)
 display.clear()
-display.print("NAT 20")
 
 # Initialize rotary encoder
 encoder = rotaryio.IncrementalEncoder(board.GP17, board.GP18)
@@ -57,11 +55,11 @@ switch_mode.pull = digitalio.Pull.UP
 
 # Adjustable thresholds for volume control
 VOLUME_STATE = 0
-VOLUME_THRESHOLD = 2  # Adjust as needed
+VOLUME_THRESHOLD = 2
 
 # Debounce delay in seconds
-DEBOUNCE_DELAY_KEYPAD = 0.1  # Adjust as needed
-DEBOUNCE_DELAY_ENCODER = 0.1    # Adjust as needed
+DEBOUNCE_DELAY_KEYPAD = 0.1
+DEBOUNCE_DELAY_ENCODER = 0.1
 
 # Initialize last switch state for debounce
 switch_last_state = switch.value
@@ -69,7 +67,7 @@ switch_last_time = time.monotonic()
 
 def roll_dice(sides):
     """Simulate rolling a dice with a given number of sides."""
-    return random.radint(1, sides)
+    return random.randint(1, sides)
 
 def keypad_input():
     try:
@@ -82,7 +80,6 @@ def keypad_input():
                 handle_key_press(key_number)
             else:
                 print(f'Key released: {key_number}')
-                # Additional logic for key releases can be added here if needed
                 kbd.release_all()
                 
     except Exception as e:
@@ -92,27 +89,21 @@ def volume_control(position):
     global VOLUME_STATE
     global VOLUME_THRESHOLD
 
-    # Check for a change in position
     delta = position - VOLUME_STATE
 
     if abs(delta) >= VOLUME_THRESHOLD:
-        # Determine the direction of the change
         if delta > 0:
-            # Volume up
             VOLUME_STATE = position
             print("Volume Up")
             for _ in range(abs(delta)):
                 cc.send(ConsumerControlCode.VOLUME_INCREMENT)
-                time.sleep(0.1)  # Add a small delay between increments
-            # Additional logic for volume up can be added here if needed
+                time.sleep(0.1)
         elif delta < 0:
-            # Volume down
             VOLUME_STATE = position
             print("Volume Down")
             for _ in range(abs(delta)):
                 cc.send(ConsumerControlCode.VOLUME_DECREMENT)
-                time.sleep(0.1)  # Add a small delay between decrements
-            # Additional logic for volume down can be added here if needed
+                time.sleep(0.1)
 
 def play_pause():
     global switch_last_state
@@ -120,314 +111,225 @@ def play_pause():
 
     switch_state = switch.value
 
-    # Check for a change in switch state
     if switch_state != switch_last_state:
-        # Record the time when the switch changes state
         switch_last_time = time.monotonic()
 
-    # If the switch state has been stable for a while, register the press
     if time.monotonic() - switch_last_time > DEBOUNCE_DELAY_ENCODER:
-        if not switch_state:  # Check if the switch is pressed
-            # Toggle play/pause state
+        if not switch_state:
             cc.send(ConsumerControlCode.PLAY_PAUSE)
             time.sleep(0.1)
 
-    # Update the last switch state
     switch_last_state = switch_state
     
 def handle_key_press(key_number):
     global current_mode
 
     if current_mode == MODE_DICE:
-        # Define dice rolls for different key numbers
         if key_number == 0:
-            result = roll_dice(4)  # Roll d4
+            result = roll_dice(4)
             display.clear()
             display.print(f"Rolled d4: {result}")
             print(f"Rolled d4: {result}")
         elif key_number == 1:
-            result = roll_dice(6)  # Roll d6
+            result = roll_dice(6)
             display.clear()
             display.print(f"Rolled d6: {result}")
             print(f"Rolled d6: {result}")
         elif key_number == 2:
-            result = roll_dice(8)  # Roll d8
+            result = roll_dice(8)
             display.clear()
             display.print(f"Rolled d8: {result}")
             print(f"Rolled d8: {result}")
         elif key_number == 3:
-            result = roll_dice(10)  # Roll d10
+            result = roll_dice(10)
             display.clear()
             display.print(f"Rolled d10: {result}")
             print(f"Rolled d10: {result}")
         elif key_number == 4:
-            result = roll_dice(12)  # Roll d12
+            result = roll_dice(12)
             display.clear()
             display.print(f"Rolled d12: {result}")
             print(f"Rolled d12: {result}")
         elif key_number == 5:
-            result = roll_dice(20)  # Roll d20
+            result = roll_dice(20)
             display.clear()
             display.print(f"Rolled d20: {result}")
             print(f"Rolled d20: {result}")
     
-    # Define actions for each key number
-    # Action for key 0: Type 'A'
-    if current_mode == MODE_BLENDER:
+    elif current_mode == MODE_BLENDER:
         if key_number == 0:
             print("Typing 'tab'")
             kbd.press(Keycode.TAB)
         elif key_number == 1:
-            # Action for key 1: Type 'B'
             print("Typing 'B'")
             kbd.press(Keycode.B)
         elif key_number == 2:
-            # Action for key 2: Type 'C'
             print("Typing 'G'")
             kbd.press(Keycode.G)
         elif key_number == 3:
-            # Action for key 3: Type 'D'
             print("Typing 'R'")
             kbd.press(Keycode.R)
         elif key_number == 4:
-            # Action for key 4: Type 'E'
             print("Typing 'S'")
             kbd.press(Keycode.S)
         elif key_number == 5:
-            # Action for key 6: Type 'G'
             print("Typing 'O'")
             kbd.press(Keycode.O)
         elif key_number == 6:
-            # Action for key 6: Type 'G'
             print("Typing 'E'")
             kbd.press(Keycode.E)
         elif key_number == 7:
-            # Action for key 6: Type 'G'
             print("Typing 'I'")
             kbd.press(Keycode.I)
         elif key_number == 8:
-            # Action for key 6: Type 'G'
             print("Typing 'X'")
             kbd.press(Keycode.X)
         elif key_number == 9:
-            # Action for key 6: Type 'G'
             print("Typing 'Y'")
             kbd.press(Keycode.Y)
         elif key_number == 10:
-            # Action for key 6: Type 'G'
             print("Typing 'Z'")
             kbd.press(Keycode.Z)
         elif key_number == 11:
-            # Action for key 6: Type 'G'
             print("Typing 'undo'")
             kbd.press(Keycode.CONTROL, Keycode.Z)
         elif key_number == 12:
-            # Action for key 6: Type 'G'
             print("Typing 'ZERO'")
             kbd.press(Keycode.KEYPAD_ZERO)
         elif key_number == 13:
-            # Action for key 6: Type 'G'
             print("Typing 'NUM .'")
             kbd.press(Keycode.KEYPAD_PERIOD)
         elif key_number == 14:
-            # Action for key 6: Type 'G'
-            print("1'")
+            print("Typing '1'")
             kbd.press(Keycode.ONE)
         elif key_number == 15:
-            # Action for key 6: Type 'G'
             print("Typing '2'")
             kbd.press(Keycode.TWO)
         elif key_number == 16:
-            # Action for key 6: Type 'G'
             print("Typing '3'")
             kbd.press(Keycode.THREE)
         elif key_number == 17:
-            # Action for key 6: Type 'G'
             print("Typing 'CRTL + Z'")
             kbd.press(Keycode.CONTROL, Keycode.ALT, Keycode.Z)
         elif key_number == 18:
-            # Action for key 6: Type 'G'
             print("Typing 'shift'")
             kbd.press(Keycode.SHIFT)
         elif key_number == 19:
-            # Action for key 6: Type 'G'
-            print("Typing 'SHIFT +ALT'")
+            print("Typing 'SHIFT + ALT'")
             kbd.press(Keycode.SHIFT, Keycode.ALT)
         elif key_number == 20:
-            # Action for key 6: Type 'G'
             print("Typing 'A'")
             kbd.press(Keycode.A)
         elif key_number == 21:
-            # Action for key 6: Type 'G'
             print("Typing 'SHIFT + A'")
             kbd.press(Keycode.SHIFT, Keycode.A)
         elif key_number == 22:
-            # Action for key 6: Type 'G'
             print("Typing 'loop cut'")
             kbd.press(Keycode.CONTROL, Keycode.R)
         elif key_number == 23:
-            # Action for key 6: Type 'G'
             print("Typing 'CRTL + SAVE'")
             kbd.press(Keycode.CONTROL, Keycode.S)
 
     elif current_mode == MODE_KRITA:
-        # Handle key presses in CAPSLOCK mode
         if key_number == 0:
             print("Typing 'tab'")
             kbd.press(Keycode.TAB)
         elif key_number == 1:
-            # Action for key 1: Type 'B'
             print("Typing 'B'")
             kbd.press(Keycode.B)
         elif key_number == 2:
-            # Action for key 2: Type 'C'
             print("Typing 'G'")
             kbd.press(Keycode.CONTROL, Keycode.T)
         elif key_number == 3:
-            # Action for key 3: Type 'D'
             print("Typing 'R'")
             kbd.press(Keycode.CONTROL, Keycode.A)
         elif key_number == 4:
-            # Action for key 4: Type 'E'
             print("Typing 'S'")
             kbd.press(Keycode.CONTROL, Keycode.J)
         elif key_number == 5:
-            # Action for key 6: Type 'G'
             print("Typing 'O'")
-            kbd.press(Keycode.CONTROL, Keycode.SHIFT, Keycode.N)
+            kbd.press(Keycode.CONTROL, Keycode.O)
         elif key_number == 6:
-            # Action for key 6: Type 'G'
             print("Typing 'E'")
-            kbd.press(Keycode.CONTROL)
+            kbd.press(Keycode.CONTROL, Keycode.E)
         elif key_number == 7:
-            # Action for key 6: Type 'G'
-            print("Typing '1'")
-            kbd.press(Keycode.N)
+            print("Typing 'I'")
+            kbd.press(Keycode.CONTROL, Keycode.I)
         elif key_number == 8:
-            # Action for key 6: Type 'G'
-            print("Typing '2'")
-            kbd.press(Keycode.M)
+            print("Typing 'X'")
+            kbd.press(Keycode.CONTROL, Keycode.X)
         elif key_number == 9:
-            # Action for key 6: Type 'G'
-            print("Typing '3'")
-            kbd.press(Keycode.K)
+            print("Typing 'Y'")
+            kbd.press(Keycode.CONTROL, Keycode.Y)
         elif key_number == 10:
-            # Action for key 6: Type 'G'
-            print("Typing '4'")
-            kbd.press(Keycode.CONTROL, Keycode.D)
+            print("Typing 'Z'")
+            kbd.press(Keycode.CONTROL, Keycode.Z)
         elif key_number == 11:
-            # Action for key 6: Type 'G'
-            print("Typing 'C'")
+            print("Typing 'undo'")
             kbd.press(Keycode.CONTROL, Keycode.Z)
         elif key_number == 12:
-            # Action for key 6: Type 'G'
-            print("Typing 'ESC'")
-            kbd.press(Keycode.F)
+            print("Typing 'ZERO'")
+            kbd.press(Keycode.KEYPAD_ZERO)
         elif key_number == 13:
-            # Action for key 6: Type 'G'
             print("Typing 'NUM .'")
-            kbd.press(Keycode.E)
+            kbd.press(Keycode.KEYPAD_PERIOD)
         elif key_number == 14:
-            # Action for key 6: Type 'G'
-            print("Q'")
-            kbd.press(Keycode.B)
+            print("Typing '1'")
+            kbd.press(Keycode.ONE)
         elif key_number == 15:
-            # Action for key 6: Type 'G'
-            print("Typing 'W'")
-            kbd.press(Keycode.LEFT_BRACKET)
+            print("Typing '2'")
+            kbd.press(Keycode.TWO)
         elif key_number == 16:
-            # Action for key 6: Type 'G'
-            print("Typing 'E'")
-            kbd.press(Keycode.RIGHT_BRACKET)
+            print("Typing '3'")
+            kbd.press(Keycode.THREE)
         elif key_number == 17:
-            # Action for key 6: Type 'G'
             print("Typing 'CRTL + Z'")
-            kbd.press(Keycode.CONTROL, Keycode.SHIFT, Keycode.Z)
+            kbd.press(Keycode.CONTROL, Keycode.ALT, Keycode.Z)
         elif key_number == 18:
-            # Action for key 6: Type 'G'
-            print("Typing 'SPACE'")
-            kbd.press(Keycode.SPACE)
+            print("Typing 'shift'")
+            kbd.press(Keycode.SHIFT)
         elif key_number == 19:
-            # Action for key 6: Type 'G'
-            print("Typing 'A'")
-            kbd.press(Keycode.CONTROL, Keycode.SPACE)
+            print("Typing 'SHIFT + ALT'")
+            kbd.press(Keycode.SHIFT, Keycode.ALT)
         elif key_number == 20:
-            # Action for key 6: Type 'G'
-            print("Typing 'S'")
-            kbd.press(Keycode.SHIFT, Keycode.SPACE)
+            print("Typing 'A'")
+            kbd.press(Keycode.A)
         elif key_number == 21:
-            # Action for key 6: Type 'G'
-            print("Typing 'D'")
-            kbd.press(Keycode.COMMA)
+            print("Typing 'SHIFT + A'")
+            kbd.press(Keycode.SHIFT, Keycode.A)
         elif key_number == 22:
-            # Action for key 6: Type 'G'
             print("Typing 'loop cut'")
-            kbd.press(Keycode.PERIOD, Keycode.R)
+            kbd.press(Keycode.CONTROL, Keycode.R)
         elif key_number == 23:
-            # Action for key 6: Type 'G'
             print("Typing 'CRTL + SAVE'")
             kbd.press(Keycode.CONTROL, Keycode.S)
 
-    elif current_mode == MODE_MEDIA:
-        # Handle key presses in MEDIA mode
-        if key_number == 0:
-            print("Volume Up in MEDIA mode")
-            cc.send(ConsumerControlCode.VOLUME_INCREMENT)
-
-
-def switch_mode():
+def update_mode():
     global current_mode
 
-    # Check if specific keys are pressed for mode switching
-    event = matrix.events.get()
-    if event and event.pressed:
-        key_number = event.key_number
-        current_mode = (current_mode + 1) % 3  # Switch between MODE_NORMAL, MODE_CAPSLOCK, and MODE_MEDIA
-        print(f"Switched to mode {current_mode}")
+    mode_position = encoder_mode.position
+    if mode_position % 3 == 0:
+        current_mode = MODE_BLENDER
+        display.clear()
+        display.print("Mode: Blender")
+        print("Switched to Blender Mode")
+    elif mode_position % 3 == 1:
+        current_mode = MODE_KRITA
+        display.clear()
+        display.print("Mode: Krita")
+        print("Switched to Krita Mode")
+    elif mode_position % 3 == 2:
+        current_mode = MODE_DICE
+        display.clear()
+        display.print("Mode: Dice")
+        print("Switched to Dice Mode")
 
-
-def loop():
-    global current_mode
-
+while True:
     try:
-        # Rotation
-        volume_control(encoder.position)
-
-        # Keypad input
+        update_mode()
         keypad_input()
-
-        # Play/Pause with encoder button
+        volume_control(encoder.position)
         play_pause()
         
-        # Mode selection with second encoder
-        mode_delta = encoder_mode.position
-        if mode_delta != 0:
-            global current_mode  # Add this line to declare current_mode as a global variable
-            # Change the direction of mode cycle
-            current_mode = (current_mode - mode_delta) % 3
-            encoder_mode.position = 0  # Reset position after mode change
-            print(f"Switched to mode {current_mode}")
-
-
-        # Display selected mode on LCD
-        display.clear()
-        if current_mode == MODE_BLENDER:
-            display.print("Mode: BLENDER")
-        elif current_mode == MODE_KRITA:
-            display.print("Mode: KRITA")
-        elif current_mode == MODE_MEDIA:
-            display.print("Mode: Media")
-        display.set_cursor_pos(1, 0)
-        display.print("Encoder: {}".format(encoder.position))
-        time.sleep(0.1)
-        
     except Exception as e:
-        print("An error in the loop occurred: {}".format(e))
-
-
-if __name__ == "__main__":
-    while True:
-        try:
-            loop()
-        except Exception as e:
-            print("An error in the main loop occurred: {}".format(e))
+        print(f"An error occurred: {e}")
