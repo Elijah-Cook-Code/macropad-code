@@ -11,11 +11,13 @@ import digitalio
 import busio
 import lcd
 import i2c_pcf8574_interface
+import random #for "dnd dice, new mode"
 
 # Define modes
 MODE_BLENDER = 0
 MODE_KRITA = 1
 MODE_MEDIA = 2
+MODE_DICE = 3
 
 # Initialize current mode
 current_mode = MODE_BLENDER
@@ -64,6 +66,10 @@ DEBOUNCE_DELAY_ENCODER = 0.1    # Adjust as needed
 # Initialize last switch state for debounce
 switch_last_state = switch.value
 switch_last_time = time.monotonic()
+
+def roll_dice(sides):
+    """Simulate rolling a dice with a given number of sides."""
+    return random.radint(1, sides)
 
 def keypad_input():
     try:
@@ -131,6 +137,39 @@ def play_pause():
     
 def handle_key_press(key_number):
     global current_mode
+
+    if current_mode == MODE_DICE:
+        # Define dice rolls for different key numbers
+        if key_number == 0:
+            result = roll_dice(4)  # Roll d4
+            display.clear()
+            display.print(f"Rolled d4: {result}")
+            print(f"Rolled d4: {result}")
+        elif key_number == 1:
+            result = roll_dice(6)  # Roll d6
+            display.clear()
+            display.print(f"Rolled d6: {result}")
+            print(f"Rolled d6: {result}")
+        elif key_number == 2:
+            result = roll_dice(8)  # Roll d8
+            display.clear()
+            display.print(f"Rolled d8: {result}")
+            print(f"Rolled d8: {result}")
+        elif key_number == 3:
+            result = roll_dice(10)  # Roll d10
+            display.clear()
+            display.print(f"Rolled d10: {result}")
+            print(f"Rolled d10: {result}")
+        elif key_number == 4:
+            result = roll_dice(12)  # Roll d12
+            display.clear()
+            display.print(f"Rolled d12: {result}")
+            print(f"Rolled d12: {result}")
+        elif key_number == 5:
+            result = roll_dice(20)  # Roll d20
+            display.clear()
+            display.print(f"Rolled d20: {result}")
+            print(f"Rolled d20: {result}")
     
     # Define actions for each key number
     # Action for key 0: Type 'A'
